@@ -1,0 +1,98 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  password      String
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  stripeCustomerId     String?   @unique
+  stripeSubscriptionId String?   @unique
+  stripePriceId        String?
+  stripeCurrentPeriodEnd DateTime?
+  
+  expenses      Expense[]
+  categories    Category[]
+  budgets       Budget[]
+  billReminders BillReminder[]
+  savingsGoals  SavingsGoal[]
+}
+
+model Category {
+  id        String   @id @default(cuid())
+  name      String
+  icon      String   @default("📁")
+  color     String   @default("#6366f1")
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  
+  expenses  Expense[]
+  budgets   Budget[]
+  
+  @@unique([userId, name])
+}
+
+model Expense {
+  id          String   @id @default(cuid())
+  amount      Float
+  description String
+  date        DateTime @default(now())
+  categoryId  String
+  category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([userId, date])
+}
+
+model Budget {
+  id         String   @id @default(cuid())
+  amount     Float
+  month      Int
+  year       Int
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  
+  @@unique([userId, categoryId, month, year])
+}
+
+model BillReminder {
+  id        String   @id @default(cuid())
+  name      String
+  amount    Float
+  dueDay    Int
+  isRecurring Boolean @default(true)
+  isPaid    Boolean  @default(false)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model SavingsGoal {
+  id            String   @id @default(cuid())
+  name          String
+  targetAmount  Float
+  currentAmount Float    @default(0)
+  deadline      DateTime?
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
